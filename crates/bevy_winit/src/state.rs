@@ -41,6 +41,9 @@ use crate::{
     WinitSettings, WinitWindows,
 };
 
+/// Set this flag to `true` to prohibit bevy updates
+pub static PAUSE: std::sync::atomic::AtomicBool = std::sync::atomic::AtomicBool::new(false);
+
 /// Persistent state that is used to run the [`App`] according to the current
 /// [`UpdateMode`].
 struct WinitAppRunnerState<T: Event> {
@@ -401,6 +404,10 @@ impl<T: Event> ApplicationHandler<T> for WinitAppRunnerState<T> {
     }
 
     fn about_to_wait(&mut self, event_loop: &ActiveEventLoop) {
+        if PAUSE.load(std::sync::atomic::Ordering::Acquire){        
+            self.lifecycle = AppLifecycle::Suspended;            
+        }
+                                     
         // create any new windows
         // (even if app did not update, some may have been created by plugin setup)
         let mut create_window =
