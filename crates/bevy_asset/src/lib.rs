@@ -431,7 +431,7 @@ pub struct TrackAssets;
 /// A system set where events accumulated in [`Assets`] are applied to the [`AssetEvent`] [`Events`] resource.
 ///
 /// [`Events`]: bevy_ecs::event::Events
-#[derive(Debug, Hash, PartialEq, Eq, Clone, SystemSet)]
+#[derive(Debug, Hash, PartialEq, Eq, Clone, SystemSet, ScheduleLabel)]
 pub struct AssetEvents;
 
 #[cfg(test)]
