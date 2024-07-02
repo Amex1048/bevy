@@ -56,10 +56,15 @@ use smallvec::SmallVec;
 use crate::{
     core_3d::{
         graph::{Core3d, Node3d},
-        Camera3d, DEPTH_TEXTURE_SAMPLING_SUPPORTED,
+        Camera3d
     },
     fullscreen_vertex_shader::fullscreen_shader_vertex_state,
 };
+
+#[cfg(any(feature = "webgpu", not(target_arch = "wasm32")))]
+use crate::core_3d::DEPTH_TEXTURE_SAMPLING_SUPPORTED;
+#[cfg(all(feature = "webgl", target_arch = "wasm32", not(feature = "webgpu")))]
+use crate::core_3d::DEPTH_TEXTURE_SAMPLING_SUPPORTED;
 
 const DOF_SHADER_HANDLE: Handle<Shader> = Handle::weak_from_u128(2031861180739216043);
 
@@ -795,7 +800,7 @@ fn extract_depth_of_field_settings(
     mut commands: Commands,
     mut query: Extract<Query<(Entity, &DepthOfFieldSettings, &Projection)>>,
 ) {
-    if !DEPTH_TEXTURE_SAMPLING_SUPPORTED {
+    #[cfg(all(feature = "webgl", target_arch = "wasm32", not(feature = "webgpu")))]{
         info_once!(
             "Disabling depth of field on this platform because depth textures aren't supported correctly"
         );
