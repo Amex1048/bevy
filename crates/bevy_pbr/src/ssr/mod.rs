@@ -3,13 +3,15 @@
 use bevy_app::{App, Plugin};
 use bevy_asset::{load_internal_asset, Handle};
 use bevy_core_pipeline::{
-    core_3d::{
-        graph::{Core3d, Node3d},
-        DEPTH_TEXTURE_SAMPLING_SUPPORTED,
-    },
+    core_3d::graph::{Core3d, Node3d},
     fullscreen_vertex_shader,
     prepass::{DeferredPrepass, DepthPrepass, MotionVectorPrepass, NormalPrepass},
 };
+#[cfg(any(feature = "webgpu", not(target_arch = "wasm32")))]
+use bevy_core_pipeline::core_3d::DEPTH_TEXTURE_SAMPLING_SUPPORTED;
+#[cfg(all(feature = "webgl", target_arch = "wasm32", not(feature = "webgpu")))]
+use bevy_core_pipeline::core_3d::DEPTH_TEXTURE_SAMPLING_SUPPORTED;
+
 use bevy_derive::{Deref, DerefMut};
 use bevy_ecs::{
     bundle::Bundle,
@@ -489,15 +491,33 @@ impl ExtractComponent for ScreenSpaceReflectionsSettings {
     type Out = ScreenSpaceReflectionsUniform;
 
     fn extract_component(settings: QueryItem<'_, Self::QueryData>) -> Option<Self::Out> {
-        if !DEPTH_TEXTURE_SAMPLING_SUPPORTED {
-            info_once!(
-                "Disabling screen-space reflections on this platform because depth textures \
-                aren't supported correctly"
-            );
-            return None;
+        #[cfg(any(feature = "webgpu", not(target_arch = "wasm32")))]
+        {
+            if !DEPTH_TEXTURE_SAMPLING_SUPPORTED {
+                info_once!(
+                    "Disabling screen-space reflections on this platform because depth textures \
+                    aren't supported correctly"
+                );
+                return None;
+            }
+
+            return Some((*settings).into());
         }
 
-        Some((*settings).into())
+        #[cfg(all(feature = "webgl", target_arch = "wasm32", not(feature = "webgpu")))]
+        {
+            if !DEPTH_TEXTURE_SAMPLING_SUPPORTED {
+                info_once!(
+                    "Disabling screen-space reflections on this platform because depth textures \
+                    aren't supported correctly"
+                );
+                return None;
+            }
+
+            return Some((*settings).into());
+        }
+
+        return None;
     }
 }
 
