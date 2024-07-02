@@ -40,6 +40,8 @@ mod winit_config;
 pub mod winit_event;
 mod winit_windows;
 
+pub use state::PAUSE;
+
 /// [`AndroidApp`] provides an interface to query the application state as well as monitor events
 /// (for example lifecycle and input events).
 #[cfg(target_os = "android")]
