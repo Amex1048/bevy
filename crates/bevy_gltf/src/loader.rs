@@ -377,9 +377,12 @@ async fn load_gltf<'a, 'b, 'c>(
     // that the material's load context would no longer track those images as dependencies.
     let mut _texture_handles = Vec::new();
 
+
     if gltf.textures().len() == 1 || cfg!(target_arch = "wasm32") {
         use rayon::prelude::*;
         use futures::executor::block_on;
+
+        let mut total_texture_size = 0;
 
         let parent_path = load_context.path().parent().unwrap();
         let buffer_data = &buffer_data;
@@ -398,11 +401,18 @@ async fn load_gltf<'a, 'b, 'c>(
         if let Ok(image) = image {
             if let ImageOrPath::Image { ref image, .. } = image {
                 let l = image.data.len();
+                total_texture_size += l;
                 info!("{}MB {}KB {}B", l / 1_000_000, l % 1_000_000 / 1_000, l % 1_000);
             }
 
             process_loaded_texture(load_context, &mut _texture_handles, image)
         });
+
+        info!("Total size: {}MB {}KB {}B",
+            total_texture_size / 1_000_000,
+            total_texture_size % 1_000_000 / 1_000,
+            total_texture_size % 1_000);
+
     } else {
         #[cfg(not(target_arch = "wasm32"))]
         IoTaskPool::get()
