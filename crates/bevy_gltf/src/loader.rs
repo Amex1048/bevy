@@ -400,10 +400,10 @@ async fn load_gltf<'a, 'b, 'c>(
         }).filter(|img| {
             if let Ok(img) = img {
                 if let ImageOrPath::Image { ref image, .. } = img {
-                    return 10 >= image.data.len()
+                    return 10_000_000 >= image.data.len()
                 }
             };
-            
+
             false
         }).collect::<Vec<_>>().into_iter().for_each(|image|
         if let Ok(image) = image {
