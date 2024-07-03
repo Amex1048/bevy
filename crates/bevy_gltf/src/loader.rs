@@ -397,7 +397,8 @@ async fn load_gltf<'a, 'b, 'c>(
         }).collect::<Vec<_>>().into_iter().for_each(|image|
         if let Ok(image) = image {
             if let ImageOrPath::Image { ref image, .. } = image {
-                info!("{}", image.data.len());
+                let l = image.data.len();
+                info!("{}MB {}KB {}B", l / 1_000_000, l % 1_000_000 / 1_000, l % 1_000);
             }
 
             process_loaded_texture(load_context, &mut _texture_handles, image)
