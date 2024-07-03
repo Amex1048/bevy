@@ -400,7 +400,7 @@ async fn load_gltf<'a, 'b, 'c>(
         }).filter(|img| {
             if let Ok(img) = img {
                 if let ImageOrPath::Image { ref image, .. } = img {
-                    return 10_000_000 >= image.data.len()
+                    return 60_000_000 >= image.data.len()
                 }
             };
 
