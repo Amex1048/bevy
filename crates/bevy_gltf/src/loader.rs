@@ -394,8 +394,12 @@ async fn load_gltf<'a, 'b, 'c>(
                 loader.supported_compressed_formats,
                 settings.load_materials,
             ))
-        }).collect::<Vec<_>>().into_iter().for_each(|image| 
+        }).collect::<Vec<_>>().into_iter().for_each(|image|
         if let Ok(image) = image {
+            if let ImageOrPath::Image { ref image, .. } = image {
+                info!("{}", image.data.len());
+            }
+
             process_loaded_texture(load_context, &mut _texture_handles, image)
         });
     } else {
