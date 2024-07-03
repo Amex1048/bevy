@@ -397,6 +397,14 @@ async fn load_gltf<'a, 'b, 'c>(
                 loader.supported_compressed_formats,
                 settings.load_materials,
             ))
+        }).filter(|img| {
+            if let Ok(img) = img {
+                if let ImageOrPath::Image { ref image, .. } = img {
+                    return 10 >= image.data.len()
+                }
+            };
+            
+            false
         }).collect::<Vec<_>>().into_iter().for_each(|image|
         if let Ok(image) = image {
             if let ImageOrPath::Image { ref image, .. } = image {
