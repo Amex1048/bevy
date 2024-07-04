@@ -800,8 +800,7 @@ fn extract_depth_of_field_settings(
     mut commands: Commands,
     mut query: Extract<Query<(Entity, &DepthOfFieldSettings, &Projection)>>,
 ) {
-    #[cfg(all(feature = "webgl", target_arch = "wasm32", not(feature = "webgpu")))]
-    {
+    #[cfg(all(feature = "webgl", target_arch = "wasm32", not(feature = "webgpu")))]{
         info_once!(
             "Disabling depth of field on this platform because depth textures aren't supported correctly"
         );
