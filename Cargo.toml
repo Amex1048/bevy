@@ -339,11 +339,11 @@ ios_simulator = ["bevy_internal/ios_simulator"]
 bevy_state = ["bevy_internal/bevy_state"]
 
 [dependencies]
-bevy_internal = { path = "crates/bevy_internal", version = "0.14.0-rc.2", default-features = false }
+bevy_internal = { path = "crates/bevy_internal", version = "0.14.0-rc.3", default-features = false }
 
 # WASM does not support dynamic linking.
 [target.'cfg(not(target_family = "wasm"))'.dependencies]
-bevy_dylib = { path = "crates/bevy_dylib", version = "0.14.0-rc.2", default-features = false, optional = true }
+bevy_dylib = { path = "crates/bevy_dylib", version = "0.14.0-rc.3", default-features = false, optional = true }
 
 [dev-dependencies]
 rand = "0.8.0"
@@ -2535,6 +2535,17 @@ category = "ECS (Entity Component System)"
 wasm = false
 
 [[example]]
+name = "observers"
+path = "examples/ecs/observers.rs"
+doc-scrape-examples = true
+
+[package.metadata.example.observers]
+name = "Observers"
+description = "Demonstrates observers that react to events (both built-in life-cycle events and custom events)"
+category = "ECS (Entity Component System)"
+wasm = true
+
+[[example]]
 name = "3d_rotation"
 path = "examples/transforms/3d_rotation.rs"
 doc-scrape-examples = true
@@ -3105,6 +3116,17 @@ doc-scrape-examples = true
 [package.metadata.example.2d_top_down_camera]
 name = "2D top-down camera"
 description = "A 2D top-down camera smoothly following player movements"
+category = "Camera"
+wasm = true
+
+[[example]]
+name = "first_person_view_model"
+path = "examples/camera/first_person_view_model.rs"
+doc-scrape-examples = true
+
+[package.metadata.example.first_person_view_model]
+name = "First person view model"
+description = "A first-person camera that uses a world model and a view model with different field of views (FOV)"
 category = "Camera"
 wasm = true
 
