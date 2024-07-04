@@ -9,6 +9,7 @@ license = "MIT OR Apache-2.0"
 keywords = ["bevy"]
 
 [features]
+rayon = [ "dep:rayon", "dep:wasm-bindgen-rayon", "dep:futures" ]
 dds = ["bevy_render/dds"]
 pbr_transmission_textures = ["bevy_pbr/pbr_transmission_textures"]
 pbr_multi_layer_material_textures = []
@@ -56,6 +57,10 @@ percent-encoding = "2.1"
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1"
 smallvec = "1.11"
+
+rayon = { version = "1.10.0", optional = true }
+wasm-bindgen-rayon = { version = "1.2", features = ["no-bundler"], optional = true }
+futures = { version =  "0.3.30", features = ["executor"], optional = true }
 
 [lints]
 workspace = true

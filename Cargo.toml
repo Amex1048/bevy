@@ -81,6 +81,9 @@ default = [
   "sysinfo_plugin",
 ]
 
+# For parallel textore decoding using rayon
+rayon = ["bevy_gltf/rayon"]
+
 # Force dynamic linking, which improves iterative compile times
 dynamic_linking = ["dep:bevy_dylib", "bevy_internal/dynamic_linking"]
 
