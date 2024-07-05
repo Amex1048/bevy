@@ -4,7 +4,7 @@ use super::{Deferred, IntoObserverSystem, IntoSystem, RegisterSystem, Resource};
 use crate::{
     self as bevy_ecs,
     bundle::Bundle,
-    component::{ComponentId, ComponentInfo},
+    component::ComponentId,
     entity::{Entities, Entity},
     event::Event,
     observer::{Observer, TriggerEvent, TriggerTargets},
@@ -14,6 +14,7 @@ use crate::{
 };
 use bevy_utils::tracing::{error, info};
 pub use parallel_scope::*;
+use std::marker::PhantomData;
 
 /// A [`Command`] queue to perform structural changes to the [`World`].
 ///
@@ -824,20 +825,35 @@ impl<'w, 's> Commands<'w, 's> {
 /// ```
 pub trait EntityCommand<Marker = ()>: Send + 'static {
     /// Executes this command for the given [`Entity`].
-    fn apply(self, entity: Entity, world: &mut World);
-
+    fn apply(self, id: Entity, world: &mut World);
     /// Returns a [`Command`] which executes this [`EntityCommand`] for the given [`Entity`].
-    ///
-    /// This method is called when adding an [`EntityCommand`] to a command queue via [`Commands`].
-    /// You can override the provided implementation if you can return a `Command` with a smaller memory
-    /// footprint than `(Entity, Self)`.
-    /// In most cases the provided implementation is sufficient.
     #[must_use = "commands do nothing unless applied to a `World`"]
-    fn with_entity(self, entity: Entity) -> impl Command
+    fn with_entity(self, id: Entity) -> WithEntity<Marker, Self>
     where
         Self: Sized,
     {
-        move |world: &mut World| self.apply(entity, world)
+        WithEntity {
+            cmd: self,
+            id,
+            marker: PhantomData,
+        }
+    }
+}
+
+/// Turns an [`EntityCommand`] type into a [`Command`] type.
+pub struct WithEntity<Marker, C: EntityCommand<Marker>> {
+    cmd: C,
+    id: Entity,
+    marker: PhantomData<fn() -> Marker>,
+}
+
+impl<M, C: EntityCommand<M>> Command for WithEntity<M, C>
+where
+    M: 'static,
+{
+    #[inline]
+    fn apply(self, world: &mut World) {
+        self.cmd.apply(self.id, world);
     }
 }
 
@@ -1306,7 +1322,8 @@ fn insert_resource<R: Resource>(resource: R) -> impl Command {
 fn log_components(entity: Entity, world: &mut World) {
     let debug_infos: Vec<_> = world
         .inspect_entity(entity)
-        .map(ComponentInfo::name)
+        .into_iter()
+        .map(|component_info| component_info.name())
         .collect();
     info!("Entity {:?}: {:?}", entity, debug_infos);
 }

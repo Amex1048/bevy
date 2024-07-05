@@ -1,6 +1,6 @@
 [package]
 name = "bevy"
-version = "0.14.0-rc.3"
+version = "0.14.0"
 edition = "2021"
 categories = ["game-engines", "graphics", "gui", "rendering"]
 description = "A refreshingly simple data-driven game engine and app framework"
@@ -318,6 +318,9 @@ pbr_multi_layer_material_textures = [
   "bevy_internal/pbr_multi_layer_material_textures",
 ]
 
+# Enable support for anisotropy texture in the `StandardMaterial`, at the risk of blowing past the global, per-shader texture limit on older/lower-end GPUs
+pbr_anisotropy_texture = ["bevy_internal/pbr_anisotropy_texture"]
+
 # Enable some limitations to be able to use WebGL2. Please refer to the [WebGL2 and WebGPU](https://github.com/bevyengine/bevy/tree/latest/examples#webgl2-and-webgpu) section of the examples README for more information on how to run Wasm builds with WebGPU.
 webgl2 = ["bevy_internal/webgl"]
 
@@ -349,11 +352,11 @@ ios_simulator = ["bevy_internal/ios_simulator"]
 bevy_state = ["bevy_internal/bevy_state"]
 
 [dependencies]
-bevy_internal = { path = "crates/bevy_internal", version = "0.14.0-rc.3", default-features = false }
+bevy_internal = { path = "crates/bevy_internal", version = "0.14.0", default-features = false }
 
 # WASM does not support dynamic linking.
 [target.'cfg(not(target_family = "wasm"))'.dependencies]
-bevy_dylib = { path = "crates/bevy_dylib", version = "0.14.0-rc.3", default-features = false, optional = true }
+bevy_dylib = { path = "crates/bevy_dylib", version = "0.14.0", default-features = false, optional = true }
 
 [dev-dependencies]
 rand = "0.8.0"
@@ -3239,7 +3242,7 @@ wasm = true
 name = "anisotropy"
 path = "examples/3d/anisotropy.rs"
 doc-scrape-examples = true
-required-features = ["jpeg"]
+required-features = ["jpeg", "pbr_anisotropy_texture"]
 
 [package.metadata.example.anisotropy]
 name = "Anisotropy"
