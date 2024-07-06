@@ -58,7 +58,7 @@ use crate::{
 use bevy_app::{App, Last, Plugin, PreUpdate};
 use bevy_ecs::{
     reflect::AppTypeRegistry,
-    schedule::{IntoSystemConfigs, IntoSystemSetConfigs, SystemSet},
+    schedule::{IntoSystemConfigs, IntoSystemSetConfigs, SystemSet, ScheduleLabel},
     world::FromWorld,
 };
 use bevy_reflect::{FromReflect, GetTypeRegistration, Reflect, TypePath};
