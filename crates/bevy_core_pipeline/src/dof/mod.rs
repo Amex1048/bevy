@@ -56,12 +56,17 @@ use smallvec::SmallVec;
 use crate::{
     core_3d::{
         graph::{Core3d, Node3d},
-        Camera3d, DEPTH_TEXTURE_SAMPLING_SUPPORTED,
+        Camera3d,
     },
     fullscreen_vertex_shader::fullscreen_shader_vertex_state,
 };
 
 const DOF_SHADER_HANDLE: Handle<Shader> = Handle::weak_from_u128(2031861180739216043);
+
+#[cfg(all(feature = "webgl", target_arch = "wasm32", not(feature = "webgpu")))]
+use crate::core_3d::DEPTH_TEXTURE_SAMPLING_SUPPORTED;
+#[cfg(any(feature = "webgpu", not(target_arch = "wasm32")))]
+use crate::core_3d::DEPTH_TEXTURE_SAMPLING_SUPPORTED;
 
 /// A plugin that adds support for the depth of field effect to Bevy.
 pub struct DepthOfFieldPlugin;
@@ -795,6 +800,18 @@ fn extract_depth_of_field_settings(
     mut commands: Commands,
     mut query: Extract<Query<(Entity, &DepthOfFieldSettings, &Projection)>>,
 ) {
+    #[cfg(all(feature = "webgpu", target_arch = "wasm32"))]
+    return;
+
+    #[cfg(all(feature = "webgl", target_arch = "wasm32", not(feature = "webgpu")))]
+    if !crate::core_3d::DEPTH_TEXTURE_SAMPLING_SUPPORTED {
+        info_once!(
+            "Disabling depth of field on this platform because depth textures aren't supported correctly"
+        );
+        return;
+    }
+
+    #[cfg(any(feature = "webgpu", not(target_arch = "wasm32")))]
     if !DEPTH_TEXTURE_SAMPLING_SUPPORTED {
         info_once!(
             "Disabling depth of field on this platform because depth textures aren't supported correctly"
