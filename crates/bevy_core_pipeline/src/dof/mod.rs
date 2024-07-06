@@ -812,7 +812,7 @@ fn extract_depth_of_field_settings(
     }
 
     #[cfg(any(feature = "webgpu", not(target_arch = "wasm32")))]
-    if !DEPTH_TEXTURE_SAMPLING_SUPPORTED {
+    if !crate::core_3d::DEPTH_TEXTURE_SAMPLING_SUPPORTED {
         info_once!(
             "Disabling depth of field on this platform because depth textures aren't supported correctly"
         );
