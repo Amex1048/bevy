@@ -75,8 +75,7 @@ wgpu = { version = "0.20", default-features = false, features = [
   "dx12",
   "metal",
   "naga",
-  "naga-ir",
-  "fragile-send-sync-non-atomic-wasm",
+  "naga-ir"
 ] }
 naga = { version = "0.20", features = ["wgsl-in"] }
 serde = { version = "1", features = ["derive"] }
