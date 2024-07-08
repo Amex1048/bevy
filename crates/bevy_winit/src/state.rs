@@ -41,6 +41,7 @@ use crate::{
     WinitSettings, WinitWindows,
 };
 
+/// Set this flag to `true` to prohibit bevy updates
 pub static PAUSE: std::sync::atomic::AtomicBool = std::sync::atomic::AtomicBool::new(false);
 
 /// Persistent state that is used to run the [`App`] according to the current
