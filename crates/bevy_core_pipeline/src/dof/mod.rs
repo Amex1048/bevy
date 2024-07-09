@@ -68,11 +68,6 @@ use crate::core_3d::DEPTH_TEXTURE_SAMPLING_SUPPORTED;
 
 const DOF_SHADER_HANDLE: Handle<Shader> = Handle::weak_from_u128(2031861180739216043);
 
-#[cfg(all(feature = "webgl", target_arch = "wasm32", not(feature = "webgpu")))]
-use crate::core_3d::DEPTH_TEXTURE_SAMPLING_SUPPORTED;
-#[cfg(any(feature = "webgpu", not(target_arch = "wasm32")))]
-use crate::core_3d::DEPTH_TEXTURE_SAMPLING_SUPPORTED;
-
 /// A plugin that adds support for the depth of field effect to Bevy.
 pub struct DepthOfFieldPlugin;
 
