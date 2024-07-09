@@ -374,7 +374,7 @@ async fn load_gltf<'a, 'b, 'c>(
     // that the material's load context would no longer track those images as dependencies.
     let mut _texture_handles = Vec::new();
 
-    #[cfg(feature = "rayon")]
+    #[cfg(feature = "wayland")]
     {
         use rayon::prelude::*;
         use futures::executor::block_on;

@@ -9,7 +9,7 @@ license = "MIT OR Apache-2.0"
 keywords = ["bevy"]
 
 [features]
-rayon = [ "dep:rayon", "dep:wasm-bindgen-rayon", "dep:futures" ]
+wayland = [ "dep:rayon", "dep:wasm-bindgen-rayon", "dep:futures" ]
 dds = ["bevy_render/dds"]
 pbr_transmission_textures = ["bevy_pbr/pbr_transmission_textures"]
 pbr_multi_layer_material_textures = []
