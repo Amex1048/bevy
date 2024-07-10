@@ -9,7 +9,6 @@ license = "MIT OR Apache-2.0"
 keywords = ["bevy"]
 
 [features]
-wayland = [ "dep:rayon", "dep:wasm-bindgen-rayon", "dep:futures" ]
 dds = ["bevy_render/dds"]
 pbr_transmission_textures = ["bevy_pbr/pbr_transmission_textures"]
 pbr_multi_layer_material_textures = []
@@ -60,7 +59,7 @@ smallvec = "1.11"
 
 rayon = { version = "1.10.0" }
 wasm-bindgen-rayon = { version = "1.2", features = ["no-bundler"] }
-futures = { version =  "0.3.30", features = ["executor"] }
+futures = { version = "0.3.30", features = ["executor"] }
 
 [lints]
 workspace = true
