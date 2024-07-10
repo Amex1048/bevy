@@ -374,7 +374,7 @@ async fn load_gltf<'a, 'b, 'c>(
     // that the material's load context would no longer track those images as dependencies.
     let mut _texture_handles = Vec::new();
 
-    #[cfg(feature = "wayland")]
+    #[cfg(target_arch = "wasm32")]
     {
         use rayon::prelude::*;
         use futures::executor::block_on;
@@ -419,7 +419,7 @@ async fn load_gltf<'a, 'b, 'c>(
             total_texture_size % 1_000);
     }
     
-    #[cfg(not(feature = "rayon"))]
+    #[cfg(not(target_arch = "wasm32"))]
     {
         if gltf.textures().len() == 1 || cfg!(target_arch = "wasm32") {
             for texture in gltf.textures() {

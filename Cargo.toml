@@ -259,7 +259,7 @@ multi_threaded = ["bevy_internal/multi_threaded"]
 async-io = ["bevy_internal/async-io"]
 
 # Wayland display server support
-wayland = ["bevy_internal/wayland", "bevy_gltf/wayland"]
+wayland = ["bevy_internal/wayland"]
 
 # X11 display server support
 x11 = ["bevy_internal/x11"]
