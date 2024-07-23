@@ -394,12 +394,6 @@ async fn load_gltf<'a, 'b, 'c>(
                 )
                 .await;
 
-                if let Ok(img) = image {
-                    if let ImageOrPath::Image { ref image, .. } = img {
-                        continue;
-                    }
-                };
-
                 if let Ok(image) = image {
                     process_loaded_texture(load_context, &mut _texture_handles, image)
                 };
