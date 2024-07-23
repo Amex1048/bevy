@@ -384,14 +384,15 @@ async fn load_gltf<'a, 'b, 'c>(
             let linear_textures = &linear_textures;
 
             for texture in gltf.textures() {
-                let image = block_on(load_image(
+                let image = load_image(
                     texture,
                     buffer_data,
                     linear_textures,
                     parent_path,
                     loader.supported_compressed_formats,
                     settings.load_materials,
-                ));
+                )
+                .await;
 
                 if let Ok(img) = image {
                     if let ImageOrPath::Image { ref image, .. } = img {
