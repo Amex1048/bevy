@@ -376,27 +376,35 @@ async fn load_gltf<'a, 'b, 'c>(
     // that the material's load context would no longer track those images as dependencies.
     let mut _texture_handles = Vec::new();
 
+    for texture in gltf.textures() {
+        let parent_path = load_context.path().parent().unwrap();
+        let image = load_image(
+            texture,
+            &buffer_data,
+            &linear_textures,
+            parent_path,
+            loader.supported_compressed_formats,
+            settings.load_materials,
+        )
+        .await?;
+        process_loaded_texture(load_context, &mut _texture_handles, image);
+    }
+
     if gltf.textures().len() == 1 || cfg!(target_arch = "wasm32") {
         #[cfg(target_arch = "wasm32")]
         {
-            let parent_path = load_context.path().parent().unwrap();
-            let buffer_data = &buffer_data;
-            let linear_textures = &linear_textures;
-
             for texture in gltf.textures() {
+                let parent_path = load_context.path().parent().unwrap();
                 let image = load_image(
                     texture,
-                    buffer_data,
-                    linear_textures,
+                    &buffer_data,
+                    &linear_textures,
                     parent_path,
                     loader.supported_compressed_formats,
                     settings.load_materials,
                 )
-                .await;
-
-                if let Ok(image) = image {
-                    process_loaded_texture(load_context, &mut _texture_handles, image)
-                };
+                .await?;
+                process_loaded_texture(load_context, &mut _texture_handles, image);
             }
         }
     } else {
