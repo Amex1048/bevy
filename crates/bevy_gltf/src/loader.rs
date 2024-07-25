@@ -830,27 +830,95 @@ async fn load_image<'a, 'b>(
     supported_compressed_formats: CompressedImageFormats,
     render_asset_usages: RenderAssetUsages,
 ) -> Result<ImageOrPath, GltfError> {
+    use bevy_render::texture::image::RgbaImage;
+    use js_sys::*;
+    use wasm_bindgen_futures;
+    use web_sys::*;
+
     let is_srgb = !linear_textures.contains(&gltf_texture.index());
     let sampler_descriptor = texture_sampler(&gltf_texture);
     #[cfg(all(debug_assertions, feature = "dds"))]
     let name = gltf_texture
         .name()
         .map_or("Unknown GLTF Texture".to_string(), |s| s.to_string());
+
     match gltf_texture.source().source() {
         gltf::image::Source::View { view, mime_type } => {
             let start = view.offset();
             let end = view.offset() + view.length();
             let buffer = &buffer_data[view.buffer().index()][start..end];
-            let image = Image::from_buffer(
-                #[cfg(all(debug_assertions, feature = "dds"))]
-                name,
-                buffer,
-                ImageType::MimeType(mime_type),
-                supported_compressed_formats,
-                is_srgb,
-                ImageSampler::Descriptor(sampler_descriptor),
-                render_asset_usages,
-            )?;
+
+            let bytes = buffer.to_vec();
+
+            let arr = Array::of1(&Uint8Array::from(bytes.as_slice()).into());
+            let blob =
+                Blob::new_with_u8_array_sequence(&arr.into()).expect("failed to create blob");
+
+            // create a URL from the blob so we can load it into an image
+            let url = Url::create_object_url_with_blob(&blob).expect("failed to create blob url");
+
+            // create a html <img> object
+            let image = HtmlImageElement::new().expect("failed to create <img> object");
+
+            // set image url
+            image.set_src(&url);
+
+            // wait for the image to finish decoding
+            wasm_bindgen_futures::JsFuture::from(image.decode())
+                .await
+                .map_err(|err| {
+                    ImageLoaderError::Io(std::io::Error::other(
+                        err.as_string()
+                            .unwrap_or(String::from("Failed to fetch or decode an image")),
+                    ))
+                })?;
+
+            // we've loaded the image, allow the browser to reclaim the blobs memory
+            let _ = Url::revoke_object_url(&url);
+
+            // create a canvas to draw the image to
+            let canvas: HtmlCanvasElement = window()
+                .expect("global window does not exist")
+                .document()
+                .expect("expecting a document on window")
+                .create_element("canvas")
+                .expect("failed to create canvas")
+                .dyn_into()
+                .expect("expect to have HtmlCanvasElement");
+
+            // set the canvas to the same size as the image
+            canvas.set_width(image.width());
+            canvas.set_height(image.height());
+
+            // create a 2d rendering context on the canvas
+            let canvas_context: CanvasRenderingContext2d = canvas
+                .get_context("2d")
+                .expect("failed to get 2d canvas context")
+                .expect("no 2d context available")
+                .dyn_into()
+                .expect("expect to have a CanvasRenderingContext2d");
+
+            // draw the image onto the canvas
+            canvas_context
+                .draw_image_with_html_image_element(&image, 0.0, 0.0)
+                .expect("failed to draw image");
+
+            // get the image data back from the canvas
+            let image_data = canvas_context
+                .get_image_data(0.0, 0.0, image.width() as _, image.height() as _)
+                .expect("faield to get Image data from canvas context");
+
+            // according to MDN: ImageData.data contains RGBA data of all pixels
+            let rgba_data = image_data.data().0;
+
+            // create a DynamicImage from the pixel data
+            let rgba_image =
+                RgbaImage::from_raw(image_data.width(), image_data.height(), rgba_data)
+                    .expect("failed to create RgbaImage from ImageData");
+
+            // and create the actual bevy image texture
+            let image = Image::from_dynamic(rgba_image.into(), settings.is_srgb);
+
             Ok(ImageOrPath::Image {
                 image,
                 label: GltfAssetLabel::Texture(gltf_texture.index()),
