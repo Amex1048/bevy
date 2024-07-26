@@ -834,6 +834,9 @@ async fn load_image<'a, 'b>(
     use wasm_bindgen_futures;
     use web_sys::*;
 
+    use bevy_render::texture::ImageLoaderError;
+    use js_sys::wasm_bindgen::JsCast;
+
     let is_srgb = !linear_textures.contains(&gltf_texture.index());
     let sampler_descriptor = texture_sampler(&gltf_texture);
     #[cfg(all(debug_assertions, feature = "dds"))]
