@@ -830,7 +830,6 @@ async fn load_image<'a, 'b>(
     supported_compressed_formats: CompressedImageFormats,
     render_asset_usages: RenderAssetUsages,
 ) -> Result<ImageOrPath, GltfError> {
-    use bevy_render::texture::image::RgbaImage;
     use js_sys::*;
     use wasm_bindgen_futures;
     use web_sys::*;
