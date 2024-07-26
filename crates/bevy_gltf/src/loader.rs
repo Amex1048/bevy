@@ -873,7 +873,8 @@ async fn load_image<'a, 'b>(
                         err.as_string()
                             .unwrap_or(String::from("Failed to fetch or decode an image")),
                     ))
-                })?;
+                })
+                .expect("Failed to fetch or decode an image");
 
             // we've loaded the image, allow the browser to reclaim the blobs memory
             let _ = Url::revoke_object_url(&url);
