@@ -917,7 +917,11 @@ async fn load_image<'a, 'b>(
                     .expect("failed to create RgbaImage from ImageData");
 
             // and create the actual bevy image texture
-            let image = Image::from_dynamic(rgba_image.into(), settings.is_srgb);
+            let image = Image::from_dynamic(
+                rgba_image.into(),
+                settings.is_srgb,
+                RenderAssetUsages::MAIN_WORLD,
+            );
 
             Ok(ImageOrPath::Image {
                 image,
