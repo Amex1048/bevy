@@ -377,42 +377,34 @@ async fn load_gltf<'a, 'b, 'c>(
     let mut _texture_handles = Vec::new();
 
     if gltf.textures().len() == 1 || cfg!(target_arch = "wasm32") {
-        #[cfg(target_arch = "wasm32")]{
-            use rayon::prelude::*;
+        #[cfg(target_arch = "wasm32")]
+        {
             use futures::executor::block_on;
-    
-            let mut total_texture_size = 0;
-    
+            use rayon::prelude::*;
+
             let parent_path = load_context.path().parent().unwrap();
             let buffer_data = &buffer_data;
             let linear_textures = &linear_textures;
-    
-            gltf.textures().par_bridge().map(|texture| {
-                block_on(load_image(
-                    texture,
-                    buffer_data,
-                    linear_textures,
-                    parent_path,
-                    loader.supported_compressed_formats,
-                    settings.load_materials,
-                ))
-            }).filter(|img| {
-                if let Ok(img) = img {
-                    if let ImageOrPath::Image { ref image, .. } = img {
-                        return 60_000_000 >= image.data.len()
+
+            gltf.textures()
+                .par_bridge()
+                .map(|texture| {
+                    block_on(load_image(
+                        texture,
+                        buffer_data,
+                        linear_textures,
+                        parent_path,
+                        loader.supported_compressed_formats,
+                        settings.load_materials,
+                    ))
+                })
+                .collect::<Vec<_>>()
+                .into_iter()
+                .for_each(|image| {
+                    if let Ok(image) = image {
+                        process_loaded_texture(load_context, &mut _texture_handles, image)
                     }
-                };
-    
-                false
-            }).collect::<Vec<_>>().into_iter().for_each(|image|
-            if let Ok(image) = image {
-                if let ImageOrPath::Image { ref image, .. } = image {
-                    let l = image.data.len();
-                    total_texture_size += l;
-                }
-    
-                process_loaded_texture(load_context, &mut _texture_handles, image)
-            });
+                });
         }
     } else {
         #[cfg(not(target_arch = "wasm32"))]
