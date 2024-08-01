@@ -376,20 +376,6 @@ async fn load_gltf<'a, 'b, 'c>(
     // that the material's load context would no longer track those images as dependencies.
     let mut _texture_handles = Vec::new();
 
-    for texture in gltf.textures() {
-        let parent_path = load_context.path().parent().unwrap();
-        let image = load_image(
-            texture,
-            &buffer_data,
-            &linear_textures,
-            parent_path,
-            loader.supported_compressed_formats,
-            settings.load_materials,
-        )
-        .await?;
-        process_loaded_texture(load_context, &mut _texture_handles, image);
-    }
-
     if gltf.textures().len() == 1 || cfg!(target_arch = "wasm32") {
         #[cfg(target_arch = "wasm32")]
         {
@@ -880,14 +866,7 @@ async fn load_image<'a, 'b>(
             let _ = Url::revoke_object_url(&url);
 
             // create a canvas to draw the image to
-            let canvas: HtmlCanvasElement = window()
-                .expect("global window does not exist")
-                .document()
-                .expect("expecting a document on window")
-                .create_element("canvas")
-                .expect("failed to create canvas")
-                .dyn_into()
-                .expect("expect to have HtmlCanvasElement");
+            let canvas = OffscreenCanvas::new(image.width(), image.height()).unwrap();
 
             // set the canvas to the same size as the image
             canvas.set_width(image.width());
@@ -916,14 +895,14 @@ async fn load_image<'a, 'b>(
 
             // create a DynamicImage from the pixel data
             let rgba_image =
-                RgbaImage::from_raw(image_data.width(), image_data.height(), rgba_data)
+                image::RgbaImage::from_raw(image_data.width(), image_data.height(), rgba_data)
                     .expect("failed to create RgbaImage from ImageData");
 
             // and create the actual bevy image texture
             let image = Image::from_dynamic(
                 rgba_image.into(),
-                settings.is_srgb,
-                RenderAssetUsages::MAIN_WORLD,
+                true,
+                RenderAssetUsages::RENDER_WORLD,
             );
 
             Ok(ImageOrPath::Image {
