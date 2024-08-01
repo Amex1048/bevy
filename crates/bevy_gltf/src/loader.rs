@@ -866,7 +866,7 @@ async fn load_image<'a, 'b>(
             let _ = Url::revoke_object_url(&url);
 
             // create a canvas to draw the image to
-            let canvas = window()
+            let canvas: HtmlCanvasElement = window()
                 .expect("global window does not exist")
                 .document()
                 .expect("expecting a document on window")
