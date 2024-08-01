@@ -43,7 +43,7 @@ use bevy_scene::Scene;
 use bevy_tasks::IoTaskPool;
 use bevy_transform::components::Transform;
 use bevy_utils::tracing::{error, info_span, warn};
-use bevy_utils::{HashMap, HashSet};
+use bevy_utils::{default, HashMap, HashSet};
 use gltf::image::Source;
 use gltf::{
     accessor::Iter,
@@ -909,7 +909,7 @@ async fn load_image<'a, 'b>(
             let image = Image::from_dynamic(
                 rgba_image.into(),
                 true,
-                RenderAssetUsages::RENDER_WORLD,
+                default(),
             );
 
             Ok(ImageOrPath::Image {
