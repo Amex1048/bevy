@@ -866,7 +866,7 @@ async fn load_image<'a, 'b>(
             let _ = Url::revoke_object_url(&url);
 
             // create a canvas to draw the image to
-            let canvas: OffscreenCanvas = OffscreenCanvas::new();
+            let canvas: OffscreenCanvas = OffscreenCanvas::new(image.width(), image.height()).expect("Must be able to create canvas");
 
             // set the canvas to the same size as the image
             canvas.set_width(image.width());
