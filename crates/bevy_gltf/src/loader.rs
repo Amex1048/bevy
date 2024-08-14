@@ -379,19 +379,32 @@ async fn load_gltf<'a, 'b, 'c>(
     if gltf.textures().len() == 1 || cfg!(target_arch = "wasm32") {
         #[cfg(target_arch = "wasm32")]
         {
-            for texture in gltf.textures() {
-                let parent_path = load_context.path().parent().unwrap();
-                let image = load_image(
-                    texture,
-                    &buffer_data,
-                    &linear_textures,
-                    parent_path,
-                    loader.supported_compressed_formats,
-                    settings.load_materials,
-                )
-                .await?;
-                process_loaded_texture(load_context, &mut _texture_handles, image);
-            }
+            use futures::executor::block_on;
+            use rayon::prelude::*;
+
+            let parent_path = load_context.path().parent().unwrap();
+            let buffer_data = &buffer_data;
+            let linear_textures = &linear_textures;
+
+            gltf.textures()
+                .par_bridge()
+                .map(|texture| {
+                    block_on(load_image(
+                        texture,
+                        buffer_data,
+                        linear_textures,
+                        parent_path,
+                        loader.supported_compressed_formats,
+                        settings.load_materials,
+                    ))
+                })
+                .collect::<Vec<_>>()
+                .into_iter()
+                .for_each(|image| {
+                    if let Ok(image) = image {
+                        process_loaded_texture(load_context, &mut _texture_handles, image)
+                    }
+                });
         }
     } else {
         #[cfg(not(target_arch = "wasm32"))]
