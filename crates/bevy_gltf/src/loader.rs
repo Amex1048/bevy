@@ -63,6 +63,9 @@ use std::{
 };
 use thiserror::Error;
 
+const USE_BROWSER_DECODE: bool = true;
+const USE_WORKERS: bool = false;
+
 /// An error that occurs when loading a glTF file.
 #[derive(Error, Debug)]
 pub enum GltfError {
@@ -379,32 +382,48 @@ async fn load_gltf<'a, 'b, 'c>(
     if gltf.textures().len() == 1 || cfg!(target_arch = "wasm32") {
         #[cfg(target_arch = "wasm32")]
         {
-            use futures::executor::block_on;
-            use rayon::prelude::*;
+            if USE_WORKERS && !USE_BROWSER_DECODE {
+                use futures::executor::block_on;
+                use rayon::prelude::*;
 
-            let parent_path = load_context.path().parent().unwrap();
-            let buffer_data = &buffer_data;
-            let linear_textures = &linear_textures;
+                let parent_path = load_context.path().parent().unwrap();
+                let buffer_data = &buffer_data;
+                let linear_textures = &linear_textures;
 
-            gltf.textures()
-                .par_bridge()
-                .map(|texture| {
-                    block_on(load_image(
+                gltf.textures()
+                    .par_bridge()
+                    .map(|texture| {
+                        block_on(load_image(
+                            texture,
+                            buffer_data,
+                            linear_textures,
+                            parent_path,
+                            loader.supported_compressed_formats,
+                            settings.load_materials,
+                        ))
+                    })
+                    .collect::<Vec<_>>()
+                    .into_iter()
+                    .for_each(|image| {
+                        if let Ok(image) = image {
+                            process_loaded_texture(load_context, &mut _texture_handles, image)
+                        }
+                    });
+            } else {
+                for texture in gltf.textures() {
+                    let parent_path = load_context.path().parent().unwrap();
+                    let image = load_image(
                         texture,
-                        buffer_data,
-                        linear_textures,
+                        &buffer_data,
+                        &linear_textures,
                         parent_path,
                         loader.supported_compressed_formats,
                         settings.load_materials,
-                    ))
-                })
-                .collect::<Vec<_>>()
-                .into_iter()
-                .for_each(|image| {
-                    if let Ok(image) = image {
-                        process_loaded_texture(load_context, &mut _texture_handles, image)
-                    }
-                });
+                    )
+                        .await?;
+                    process_loaded_texture(load_context, &mut _texture_handles, image);
+                }
+            }
         }
     } else {
         #[cfg(not(target_arch = "wasm32"))]
@@ -845,83 +864,112 @@ async fn load_image<'a, 'b>(
 
     match gltf_texture.source().source() {
         gltf::image::Source::View { view, mime_type } => {
-            let start = view.offset();
-            let end = view.offset() + view.length();
-            let buffer = &buffer_data[view.buffer().index()][start..end];
+            const USE_BROWSER_DECODE: bool = true;
+            
+            if USE_BROWSER_DECODE && !USE_WORKERS {
+                let start = view.offset();
+                let end = view.offset() + view.length();
+                let buffer = &buffer_data[view.buffer().index()][start..end];
 
-            let bytes = buffer.to_vec();
+                let bytes = buffer.to_vec();
 
-            let arr = Array::of1(&Uint8Array::from(bytes.as_slice()).into());
-            let blob =
-                Blob::new_with_u8_array_sequence(&arr.into()).expect("failed to create blob");
+                let arr = Array::of1(&Uint8Array::from(bytes.as_slice()).into());
+                let blob =
+                    Blob::new_with_u8_array_sequence(&arr.into()).expect("failed to create blob");
 
-            // create a URL from the blob so we can load it into an image
-            let url = Url::create_object_url_with_blob(&blob).expect("failed to create blob url");
+                // create a URL from the blob so we can load it into an image
+                let url = Url::create_object_url_with_blob(&blob).expect("failed to create blob url");
 
-            // create a html <img> object
-            let image = HtmlImageElement::new().expect("failed to create <img> object");
+                // create a html <img> object
+                let image = HtmlImageElement::new().expect("failed to create <img> object");
 
-            // set image url
-            image.set_src(&url);
+                // set image url
+                image.set_src(&url);
 
-            // wait for the image to finish decoding
-            wasm_bindgen_futures::JsFuture::from(image.decode())
-                .await
-                .map_err(|err| {
-                    ImageLoaderError::Io(std::io::Error::other(
-                        err.as_string()
-                            .unwrap_or(String::from("Failed to fetch or decode an image")),
-                    ))
+                // wait for the image to finish decoding
+                wasm_bindgen_futures::JsFuture::from(image.decode())
+                    .await
+                    .map_err(|err| {
+                        ImageLoaderError::Io(std::io::Error::other(
+                            err.as_string()
+                                .unwrap_or(String::from("Failed to fetch or decode an image")),
+                        ))
+                    })
+                    .expect("Failed to fetch or decode an image");
+
+                // we've loaded the image, allow the browser to reclaim the blobs memory
+                let _ = Url::revoke_object_url(&url);
+
+                // create a canvas to draw the image to
+                let canvas: HtmlCanvasElement = window()
+                    .expect("global window does not exist")
+                    .document()
+                    .expect("expecting a document on window")
+                    .create_element("canvas")
+                    .expect("failed to create canvas")
+                    .dyn_into()
+                    .expect("expect to have HtmlCanvasElement");
+                
+                // set the canvas to the same size as the image
+                canvas.set_width(image.width());
+                canvas.set_height(image.height());
+
+                // create a 2d rendering context on the canvas
+                let canvas_context: CanvasRenderingContext2d = canvas
+                    .get_context("2d")
+                    .expect("failed to get 2d canvas context")
+                    .expect("no 2d context available")
+                    .dyn_into()
+                    .expect("expect to have a CanvasRenderingContext2d");
+
+                // draw the image onto the canvas
+                canvas_context
+                    .draw_image_with_html_image_element(&image, 0.0, 0.0)
+                    .expect("failed to draw image");
+
+                // get the image data back from the canvas
+                let image_data = canvas_context
+                    .get_image_data(0.0, 0.0, image.width() as _, image.height() as _)
+                    .expect("faield to get Image data from canvas context");
+
+                // according to MDN: ImageData.data contains RGBA data of all pixels
+                let rgba_data = image_data.data().0;
+
+                // create a DynamicImage from the pixel data
+                let rgba_image =
+                    image::RgbaImage::from_raw(image_data.width(), image_data.height(), rgba_data)
+                        .expect("failed to create RgbaImage from ImageData");
+
+                // and create the actual bevy image texture
+                let image = Image::from_dynamic(
+                    rgba_image.into(),
+                    true,
+                    default(),
+                );
+
+                Ok(ImageOrPath::Image {
+                    image,
+                    label: GltfAssetLabel::Texture(gltf_texture.index()),
                 })
-                .expect("Failed to fetch or decode an image");
-
-            // we've loaded the image, allow the browser to reclaim the blobs memory
-            let _ = Url::revoke_object_url(&url);
-
-            // create a canvas to draw the image to
-            let canvas: OffscreenCanvas = OffscreenCanvas::new(image.width(), image.height()).expect("Must be able to create canvas");
-
-            // set the canvas to the same size as the image
-            canvas.set_width(image.width());
-            canvas.set_height(image.height());
-
-            // create a 2d rendering context on the canvas
-            let canvas_context: CanvasRenderingContext2d = canvas
-                .get_context("2d")
-                .expect("failed to get 2d canvas context")
-                .expect("no 2d context available")
-                .dyn_into()
-                .expect("expect to have a CanvasRenderingContext2d");
-
-            // draw the image onto the canvas
-            canvas_context
-                .draw_image_with_html_image_element(&image, 0.0, 0.0)
-                .expect("failed to draw image");
-
-            // get the image data back from the canvas
-            let image_data = canvas_context
-                .get_image_data(0.0, 0.0, image.width() as _, image.height() as _)
-                .expect("faield to get Image data from canvas context");
-
-            // according to MDN: ImageData.data contains RGBA data of all pixels
-            let rgba_data = image_data.data().0;
-
-            // create a DynamicImage from the pixel data
-            let rgba_image =
-                image::RgbaImage::from_raw(image_data.width(), image_data.height(), rgba_data)
-                    .expect("failed to create RgbaImage from ImageData");
-
-            // and create the actual bevy image texture
-            let image = Image::from_dynamic(
-                rgba_image.into(),
-                true,
-                default(),
-            );
-
-            Ok(ImageOrPath::Image {
-                image,
-                label: GltfAssetLabel::Texture(gltf_texture.index()),
-            })
+            } else {
+                let start = view.offset();
+                let end = view.offset() + view.length();
+                let buffer = &buffer_data[view.buffer().index()][start..end];
+                let image = Image::from_buffer(
+                    #[cfg(all(debug_assertions, feature = "dds"))]
+                    name,
+                    buffer,
+                    ImageType::MimeType(mime_type),
+                    supported_compressed_formats,
+                    is_srgb,
+                    ImageSampler::Descriptor(sampler_descriptor),
+                    render_asset_usages,
+                )?;
+                Ok(ImageOrPath::Image {
+                    image,
+                    label: GltfAssetLabel::Texture(gltf_texture.index()),
+                })
+            }
         }
         gltf::image::Source::Uri { uri, mime_type } => {
             let uri = percent_encoding::percent_decode_str(uri)
