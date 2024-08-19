@@ -42,7 +42,7 @@ use bevy_scene::Scene;
 #[cfg(not(target_arch = "wasm32"))]
 use bevy_tasks::IoTaskPool;
 use bevy_transform::components::Transform;
-use bevy_utils::tracing::{error, info_span, warn};
+use bevy_utils::tracing::{error, info, info_span, warn};
 use bevy_utils::{default, HashMap, HashSet};
 use gltf::image::Source;
 use gltf::{
@@ -201,6 +201,14 @@ async fn load_gltf<'a, 'b, 'c>(
     load_context: &'b mut LoadContext<'c>,
     settings: &'b GltfLoaderSettings,
 ) -> Result<Gltf, GltfError> {
+    let message = match (USE_WORKERS.load(Acquire), USE_BROWSER_DECODE.load(Acquire)) {
+        (true, true) => "Impossible",
+        (true, false) => "Parallel",
+        (false, true) => "Decode",
+        (false, false) => "Noopt",
+    };
+    info!("{message}");
+
     let gltf = gltf::Gltf::from_slice(bytes)?;
     let file_name = load_context.asset_path().path().to_str().ok_or(GltfError::Gltf(gltf::Error::Io(Error::new(
         std::io::ErrorKind::InvalidInput,
