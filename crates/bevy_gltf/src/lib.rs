@@ -118,6 +118,7 @@ use bevy_scene::Scene;
 pub mod prelude {
     #[doc(hidden)]
     pub use crate::{Gltf, GltfAssetLabel, GltfExtras};
+    pub use crate::loader::{USE_WORKERS, USE_BROWSER_DECODE};
 }
 
 /// Adds support for glTF file loading to the app.
