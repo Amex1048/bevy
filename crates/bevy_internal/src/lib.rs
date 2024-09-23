@@ -65,3 +65,5 @@ pub use bevy_utils as utils;
 pub use bevy_window as window;
 #[cfg(feature = "bevy_winit")]
 pub use bevy_winit as winit;
+
+pub use bevy_gltf::{USE_BROWSER_DECODE, USE_WORKERS};
