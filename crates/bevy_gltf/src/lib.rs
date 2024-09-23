@@ -1,5 +1,4 @@
 #![cfg_attr(docsrs, feature(doc_auto_cfg))]
-#![forbid(unsafe_code)]
 #![doc(
     html_logo_url = "https://bevyengine.org/assets/icon.png",
     html_favicon_url = "https://bevyengine.org/assets/icon.png"
@@ -119,6 +118,7 @@ use bevy_scene::Scene;
 pub mod prelude {
     #[doc(hidden)]
     pub use crate::{Gltf, GltfAssetLabel, GltfExtras};
+    pub use crate::loader::{USE_WORKERS, USE_BROWSER_DECODE};
 }
 
 /// Adds support for glTF file loading to the app.
