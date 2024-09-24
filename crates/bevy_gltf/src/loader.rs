@@ -14,6 +14,7 @@ use web_sys::*;
 #[cfg(target_arch = "wasm32")]
 use js_sys::wasm_bindgen::JsCast;
 
+use std::iter::Iterator;
 #[cfg(feature = "bevy_animation")]
 use bevy_animation::{AnimationTarget, AnimationTargetId};
 use bevy_asset::{
