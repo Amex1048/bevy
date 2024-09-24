@@ -5,6 +5,15 @@ use crate::{
 #[cfg(target_arch = "wasm32")]
 pub use wasm_bindgen_rayon::init_thread_pool;
 
+#[cfg(target_arch = "wasm32")]
+use js_sys::*;
+#[cfg(target_arch = "wasm32")]
+use wasm_bindgen_futures;
+#[cfg(target_arch = "wasm32")]
+use web_sys::*;
+#[cfg(target_arch = "wasm32")]
+use js_sys::wasm_bindgen::JsCast;
+
 #[cfg(feature = "bevy_animation")]
 use bevy_animation::{AnimationTarget, AnimationTargetId};
 use bevy_asset::{
@@ -794,14 +803,6 @@ async fn load_image<'a, 'b>(
     supported_compressed_formats: CompressedImageFormats,
     render_asset_usages: RenderAssetUsages,
 ) -> Result<ImageOrPath, GltfError> {
-    #[cfg(target_arch = "wasm32")]
-    {
-        use js_sys::*;
-        use wasm_bindgen_futures;
-        use web_sys::*;
-        use js_sys::wasm_bindgen::JsCast;
-    }
-
     use bevy_render::texture::ImageLoaderError;
 
     let is_srgb = !linear_textures.contains(&gltf_texture.index());
